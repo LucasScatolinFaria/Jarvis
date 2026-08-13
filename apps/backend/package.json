@@ -1,0 +1,28 @@
+{
+  "name": "@jarvis/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@fastify/websocket": "^11.3.0",
+    "@jarvis/agent": "*",
+    "@jarvis/ai": "*",
+    "@jarvis/memory": "*",
+    "@jarvis/observability": "*",
+    "@jarvis/security": "*",
+    "@jarvis/shared": "*",
+    "@jarvis/tools": "*",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.12.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+.env.*.local
+data/*.log
+data/*.db
+data/*.sqlite
+.DS_Store
+Thumbs.db
+coverage/
+.vite/
+*.tsbuildinfo

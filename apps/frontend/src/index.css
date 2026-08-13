@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+@theme {
+  --color-jarvis-bg: #05070a;
+  --color-jarvis-surface: #0b0f16;
+  --color-jarvis-surface-2: #111826;
+  --color-jarvis-border: #1c2531;
+  --color-jarvis-text: #e6edf3;
+  --color-jarvis-text-dim: #7d8a9c;
+  --color-jarvis-cyan: #22d3ee;
+  --color-jarvis-violet: #a78bfa;
+  --color-jarvis-green: #34d399;
+  --color-jarvis-amber: #fbbf24;
+  --color-jarvis-red: #f87171;
+
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-jarvis-bg);
+  color: var(--color-jarvis-text);
+  font-family: var(--font-mono);
+  overflow: hidden;
+}
+
+/* Fundo com gradientes radiais sutis + grade, para dar sensação de HUD sem
+   depender de bibliotecas externas de partículas. */
+.jarvis-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(34, 211, 238, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(167, 139, 250, 0.08), transparent 45%),
+    linear-gradient(var(--color-jarvis-bg), var(--color-jarvis-bg));
+}
+
+.jarvis-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+}
+
+@keyframes jarvis-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+.jarvis-pulse {
+  animation: jarvis-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes jarvis-blink-caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.jarvis-caret::after {
+  content: "▍";
+  margin-left: 2px;
+  animation: jarvis-blink-caret 1s step-start infinite;
+  color: var(--color-jarvis-cyan);
+}
+
+@keyframes jarvis-wave {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.jarvis-wave-bar {
+  animation: jarvis-wave 0.9s ease-in-out infinite;
+  transform-origin: center;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-jarvis-border);
+  border-radius: 999px;
+}
