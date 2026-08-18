@@ -17,45 +17,85 @@ sistema, estrutura de pastas e como os módulos conversam entre si.
 - **Um agente de verdade**, não só um wrapper de chat: o modelo pode decidir
   chamar ferramentas, o resultado volta para ele, e ele decide se já pode
   responder — com proteção contra loops infinitos.
-- **Tool Engine** funcional de ponta a ponta (`get_current_datetime`, LEVEL
-  0), pronto para receber as ferramentas das próximas fases (arquivos,
-  terminal, navegador, controle do computador...).
+- **Tool Engine** funcional de ponta a ponta, com duas ferramentas reais:
+  - `get_current_datetime` (LEVEL 0)
+  - `open_application` (LEVEL 1) — abre programas conhecidos no Windows
+    (VS Code, Chrome, Discord, Spotify, Bloco de Notas, Explorador de
+    Arquivos, terminal, ...) por allowlist, testado abrindo de verdade.
+  Pronto para receber as próximas ferramentas (arquivos, terminal,
+  navegador, mais controle do computador).
 - **Segurança desde o núcleo**: `PermissionEngine` (níveis L0–L5),
   `CommandValidator` (detecção de comandos destrutivos) e `AuditLogger`
-  (`data/audit.log`) — mesmo com uma única ferramenta de baixo risco
-  disponível.
+  (`data/audit.log`) — inclusive nas ferramentas que já mexem no sistema.
 - **Confirmação de ações críticas**: ferramentas L4/L5 pausam o agente e
   pedem aprovação explícita na UI antes de executar.
 - **Memória de sessão** (contexto da conversa atual, em processo).
 - **ModelRouter**: escolhe automaticamente entre modelo rápido, padrão ou
   avançado conforme a mensagem.
-- **HUD de chat** em React/Tailwind: estado do agente em tempo real, cartões
-  de execução de ferramenta, banner de confirmação, tema escuro com detalhes
-  neon.
+- **HUD de chat** em React/Tailwind: estado do agente em tempo real,
+  indicador animado tipo waveform que reage ao vivo (`AgentAvatar`, pulsa
+  enquanto o JARVIS pensa/executa/responde), cartões de execução de
+  ferramenta, banner de confirmação, tema escuro com detalhes neon.
 
 O que **ainda não** está aqui (por fase, ver roadmap abaixo): voz, memória
-persistente/semântica, controle do computador, visão computacional,
-multiagentes, plugins, app desktop. As interfaces (`LLMProvider`,
-`SpeechToTextProvider`, `MemoryStore`, ...) já existem como contratos
-estáveis para essas fases não quebrarem nada do que já funciona.
+persistente/semântica, controle do computador mais amplo (janelas, mídia,
+processos), visão computacional, multiagentes, plugins, app desktop. As
+interfaces (`LLMProvider`, `SpeechToTextProvider`, `MemoryStore`, ...) já
+existem como contratos estáveis para essas fases não quebrarem nada do que
+já funciona.
 
 ## Stack
 
 TypeScript de ponta a ponta · Fastify + WebSocket · React + Vite + Tailwind
-v4 · Anthropic Claude (Opus 5 / Sonnet 5 / Haiku 4.5) · Zustand · Vitest ·
-npm workspaces. Detalhes e justificativas em `docs/ARCHITECTURE.md` seção B.
+v4 · Zustand · Vitest · npm workspaces. `LLMProvider` é uma interface
+trocável (`packages/ai`) com duas implementações prontas: **Ollama** (local,
+grátis) e **Anthropic Claude** (nuvem, pago). Detalhes e justificativas em
+`docs/ARCHITECTURE.md` seção B.
+
+## Rodando 100% grátis (Ollama)
+
+Não é obrigatório pagar nada pra usar o JARVIS. Por padrão (`LLM_PROVIDER=
+ollama` no `.env.example`), o agente roda inteiramente na sua máquina com
+modelos abertos via [Ollama](https://ollama.com) — sem chave de API, sem
+limite de uso, sem enviar nada para a nuvem. O resto do stack (Node,
+Postgres, Redis, tudo) já é open-source e roda local.
+
+**Trade-off honesto:** modelos abertos rodando localmente (Llama, Qwen) são
+mais fracos que o Claude em raciocínio complexo e uso de ferramentas, e a
+velocidade depende do seu hardware (GPU/RAM).
+
+1. Instale o Ollama: [ollama.com/download](https://ollama.com/download)
+   (Windows/macOS/Linux). Ele fica rodando em segundo plano automaticamente
+   depois de instalado, escutando em `http://localhost:11434`.
+2. Baixe os modelos usados por padrão:
+   ```bash
+   ollama pull llama3.2:3b          # modelo rápido — respostas curtas/simples
+   ollama pull qwen2.5:7b-instruct  # modelo padrão — melhor uso de ferramentas
+   ```
+   Em GPUs de laptop com pouca VRAM (≤4GB), comece só com `llama3.2:3b` pra
+   validar o pipeline; ele é bem mais leve. Se tiver mais VRAM disponível,
+   dá pra usar modelos maiores — ajuste `JARVIS_MODEL_*` no `.env`.
+3. `npm install && cp .env.example .env` — o padrão já é `LLM_PROVIDER=
+   ollama`, nenhuma chave de API é necessária.
+4. `npm run dev` e teste com "Que horas são?".
+
+Quer trocar para a Anthropic depois (melhor qualidade, pago)? Defina
+`LLM_PROVIDER=anthropic` e `ANTHROPIC_API_KEY=...` no `.env` — nenhum outro
+código muda, é só configuração.
 
 ## Pré-requisitos
 
 - Node.js 20+ (testado com Node 22)
-- Uma chave de API da Anthropic — [console.anthropic.com](https://console.anthropic.com/)
+- **Opção grátis:** [Ollama](https://ollama.com/download) instalado localmente (ver acima)
+- **Opção paga:** uma chave de API da Anthropic — [console.anthropic.com](https://console.anthropic.com/)
 
 ## Instalação
 
 ```bash
 npm install
 cp .env.example .env
-# edite .env e preencha ANTHROPIC_API_KEY
+# padrão já é LLM_PROVIDER=ollama (grátis) — ver seção acima.
+# pra usar a Anthropic, troque LLM_PROVIDER=anthropic e preencha ANTHROPIC_API_KEY.
 ```
 
 ## Executando em desenvolvimento
@@ -88,11 +128,15 @@ npm run typecheck  # checagem de tipos em todos os pacotes/apps
 npm run lint
 ```
 
-Cobertura atual: `PermissionEngine`, `ModelRouter`, `ToolRegistry` + ferramenta
-de exemplo, `SessionMemory`, `AgentOrchestrator` (fluxo direto, uso de
-ferramenta, negação de permissão, confirmação aprovada/expirada, limite de
-iterações) e as rotas do backend (`/api/health`, `/api/chat`, `/ws`) com um
-`LLMProvider` falso — nenhum teste chama a API da Anthropic de verdade.
+Cobertura atual: `PermissionEngine`, `ModelRouter`, `ToolRegistry` (incluindo
+a normalização de `null` em campos opcionais), `get_current_datetime`,
+`open_application` (launcher injetado — nenhum teste abre um app de
+verdade), `SessionMemory`, `OllamaProvider` (streaming, tool_calls, erros de
+conexão/modelo — com `fetch` mockado), `AgentOrchestrator` (fluxo direto,
+uso de ferramenta, negação de permissão, confirmação aprovada/expirada,
+limite de iterações) e as rotas do backend (`/api/health`, `/api/chat`,
+`/ws`) com um `LLMProvider` falso — nenhum teste chama a API da Anthropic ou
+uma instância real do Ollama.
 
 ## Estrutura do projeto
 
